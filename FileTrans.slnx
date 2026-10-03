@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/FileTrans.App/">
+    <Project Path="FileTrans.App/FileTrans.App.Android/FileTrans.App.Android.csproj" />
+    <Project Path="FileTrans.App/FileTrans.App.Desktop/FileTrans.App.Desktop.csproj" />
+    <Project Path="FileTrans.App/FileTrans.App/FileTrans.App.csproj" />
+  </Folder>
+  <Project Path="FileTrans.Core/FileTrans.Core.csproj" />
+  <Project Path="FileTrans.Server/FileTrans.Server.csproj" />
+</Solution>
