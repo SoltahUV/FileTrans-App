@@ -6,4 +6,5 @@
   </Folder>
   <Project Path="FileTrans.Core/FileTrans.Core.csproj" />
   <Project Path="FileTrans.Server/FileTrans.Server.csproj" />
+  <Project Path="FileTrans.ServerTest/FileTrans.ServerTest.csproj" />
 </Solution>
