@@ -1,7 +1,7 @@
 using FileTrans.Core.Abstractions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-namespace FileTrans.Server;
+namespace FileTrans.Server.Endpoints;
 
 public static class TransferEndpoints
 {

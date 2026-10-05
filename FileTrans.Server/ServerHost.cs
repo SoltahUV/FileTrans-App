@@ -1,6 +1,9 @@
 using FileTrans.Core.Abstractions;
+using FileTrans.Core.Connection;
+using FileTrans.Server.Endpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FileTrans.Server;
 
@@ -9,9 +12,12 @@ public class ServerHost : IAsyncDisposable
     private readonly IIncomingTransferHandler _handler;
     private readonly string _saveDirectory;
     private WebApplication? _app;
+    private UdpDiscovery? _udpDiscovery;
 
     public int Port { get; private set; }
     public bool IsRunning => _app is not null;
+    
+    public PairingService? PairingService { get; private set; }
 
     public ServerHost(IIncomingTransferHandler handler, string saveDirectory)
     {
@@ -35,10 +41,18 @@ public class ServerHost : IAsyncDisposable
 
             options.Limits.MaxRequestBodySize = null;
         });
+
+        builder.Services.AddSingleton<PairingService>();
         
         var app = builder.Build();
-        app.MapTransferEndpoints(_handler, _saveDirectory);
+        
+        PairingService = app.Services.GetRequiredService<PairingService>();
 
+        _udpDiscovery = new UdpDiscovery(PairingService);
+        _udpDiscovery.StartListening();
+        
+        app.MapTransferEndpoints(_handler, _saveDirectory);
+        app.MapPairingEndpoints(PairingService, Port);
         try
         {
             await app.StartAsync(ct);
@@ -60,9 +74,9 @@ public class ServerHost : IAsyncDisposable
         var app = _app;
         _app = null;
 
-        await app.StartAsync();
+        await app.StopAsync();
         await app.DisposeAsync();
     }
 
-    public async ValueTask DisposeAsync() => await StartAsync();
+    public async ValueTask DisposeAsync() => await StopAsync();
 } 

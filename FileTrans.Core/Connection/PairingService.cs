@@ -71,7 +71,7 @@ public class PairingService
     {
         var bytes = new byte[4];
         System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
-        var number = BitConverter.ToUInt32(bytes, 0) & 1_000_000;
-        return number.ToString();
+        var number = BitConverter.ToUInt32(bytes, 0) % 1_000_000;
+        return number.ToString("D6");
     }
 }
