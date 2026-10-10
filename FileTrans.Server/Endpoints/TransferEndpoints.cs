@@ -1,4 +1,5 @@
 using FileTrans.Core.Abstractions;
+using FileTrans.Core.Connection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 namespace FileTrans.Server.Endpoints;
@@ -8,11 +9,14 @@ public static class TransferEndpoints
     public static void MapTransferEndpoints(
         this WebApplication app,
         IIncomingTransferHandler handler,
+        PairingService  pairingService,
         string saveDirectory)
     {
         app.MapGet("/ping", () => Results.Ok("pong"));
         app.MapPost("/text", async (HttpRequest request, CancellationToken ct) =>
         {
+            if (!IsAuthorized(request, pairingService)) 
+                return Results.Unauthorized();
             using var reader = new StreamReader(request.Body);
             var text = await reader.ReadToEndAsync(ct);
             
@@ -24,6 +28,8 @@ public static class TransferEndpoints
         });
         app.MapPost("/file", async (HttpRequest request, CancellationToken ct) =>
         {
+            if (!IsAuthorized(request, pairingService)) 
+                return Results.Unauthorized();
             var fileName = Path.GetFileName(request.Query["name"].ToString());
             
             if (string.IsNullOrWhiteSpace(fileName))
@@ -55,5 +61,12 @@ public static class TransferEndpoints
             path = Path.Combine(directory, $"{name}({i}){ext}");
             if(!File.Exists(path)) return path;
         }
+    }
+    private static bool IsAuthorized(HttpRequest request, PairingService pairingService)
+    {
+        var token = request.Headers["X-Session-Token"].FirstOrDefault();
+        var session = pairingService.GetCurrentPairingSession();
+        return session is { Status: PairingStatus.Confirmed } 
+               && session.SessionToken == token;
     }
 }

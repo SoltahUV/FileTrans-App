@@ -13,6 +13,7 @@ public class PairingSession
     public string Pin { get; init; } = string.Empty;
     public string HostIp { get; init;} = string.Empty;
     public int HttpPort { get; init; }
+    public string SessionToken { get; init;} = Guid.NewGuid().ToString("N"); 
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public PairingStatus Status { get; set; } = PairingStatus.Pending;
     

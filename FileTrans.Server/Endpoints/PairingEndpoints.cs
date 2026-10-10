@@ -1,5 +1,5 @@
-using FileTrans.Core.Abstractions;
 using FileTrans.Core.Connection;
+using FileTrans.Core.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
@@ -14,28 +14,30 @@ public static class PairingEndpoints
     {
         app.MapPost("/pairing/start", () =>
         {
+            var existing = pairingService.GetCurrentPairingSession();
+            if (existing is { Status: PairingStatus.Pending })
+                return Results.Conflict(new { error = "Pairing already in progress" });
+
             var session = pairingService.CreatePairingSession(port);
-            var qrPng = QrCodeGenerator.GeneratePng(session);
-
-            return Results.Ok(new
-            {
-                pin = session.Pin,
-                qr = Convert.ToBase64String(qrPng)
-            });
-
+            var qrPng = QrCodeGenerator.GeneratePng(session.HostIp, session.HttpPort, session.Pin);
+            return Results.Created("/pairing/session", new PairingStartResponse(
+                session.Pin,
+                Convert.ToBase64String(qrPng),
+                session.HostIp,
+                session.HttpPort
+            ));
         });
         app.MapPost("/pairing/confirm", async (HttpRequest request) =>
         {
             var body = await request.ReadFromJsonAsync<ConfirmRequest>();
             if (body is null) return Results.BadRequest();
 
-            var ok = pairingService.TryToConfirm(body.Pin);
-            return ok
-                ? Results.Ok(new {success = true}) 
-                : Results.Json(new { error = "Invalid or expired pin"},
+            if (!pairingService.TryToConfirm(body.Pin, out var token))
+                return Results.Json(new { error = "Invalid or expired pin" }, 
                     statusCode: StatusCodes.Status401Unauthorized);
+
+            return Results.Ok(new { token });
         });
     }
-
-    private record ConfirmRequest(string Pin);
+    
 }

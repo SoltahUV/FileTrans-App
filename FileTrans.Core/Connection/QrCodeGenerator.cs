@@ -9,13 +9,12 @@ public static class QrCodeGenerator
     /// pattern inside: "filetrans://192.168.1.1:5000?pin=123456"
     /// </summary>
 
-    public static byte[] GeneratePng(PairingSession session, int scale = 10, int border = 4)
+    public static byte[] GeneratePng(string ip, int port, string pin, int scale = 10, int border = 4)
     {
-        var payload = $"filetrans://{session.HostIp}:{session.HttpPort}?pin={session.Pin}";
+        var payload = $"filetrans://{ip}:{port}?pin={pin}";
         var qr = QrCode.EncodeText(payload, QrCode.Ecc.Medium);
         return qr.ToPngBitmap(border, scale);
     }
-
     public static (string ip, int port, string pin)? ParseQrPayload(string payload)
     {
         if (!Uri.TryCreate(payload, UriKind.Absolute, out var uri))

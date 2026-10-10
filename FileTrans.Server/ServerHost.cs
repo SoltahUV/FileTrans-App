@@ -16,8 +16,10 @@ public class ServerHost : IAsyncDisposable
 
     public int Port { get; private set; }
     public bool IsRunning => _app is not null;
-    
-    public PairingService? PairingService { get; private set; }
+
+    private PairingService? _pairingService;
+    public PairingService PairingService => _pairingService 
+                                            ?? throw new InvalidOperationException("Server is not running");
 
     public ServerHost(IIncomingTransferHandler handler, string saveDirectory)
     {
@@ -46,13 +48,13 @@ public class ServerHost : IAsyncDisposable
         
         var app = builder.Build();
         
-        PairingService = app.Services.GetRequiredService<PairingService>();
+        _pairingService = app.Services.GetRequiredService<PairingService>();
 
         _udpDiscovery = new UdpDiscovery(PairingService);
         _udpDiscovery.StartListening();
         
-        app.MapTransferEndpoints(_handler, _saveDirectory);
-        app.MapPairingEndpoints(PairingService, Port);
+        app.MapPairingEndpoints(PairingService, port);
+        app.MapTransferEndpoints(_handler, PairingService, _saveDirectory);
         try
         {
             await app.StartAsync(ct);

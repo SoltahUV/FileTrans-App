@@ -29,8 +29,10 @@ public class PairingService
     /// <summary>
     /// Check pin from client 
     /// </summary>
-    public bool TryToConfirm(string pin)
+    public bool TryToConfirm(string pin, out string? sessionToken)
     {
+        sessionToken = null;
+    
         if (_pairingSession is null) return false;
 
         if (_pairingSession.IsExpired)
@@ -39,17 +41,17 @@ public class PairingService
             return false;
         }
 
-        if (_pairingSession.Pin != pin) {
+        if (_pairingSession.Pin != pin)
+        {
             _pairingSession.Status = PairingStatus.Rejected;
-            return false; 
+            return false;
         }
 
         _pairingSession.Status = PairingStatus.Confirmed;
+        sessionToken = _pairingSession.SessionToken;
         OnPairingConfirmed?.Invoke(_pairingSession);
         return true;
-
     }
-    
     public PairingSession? GetCurrentPairingSession() => _pairingSession;
 
     public void InvalidatePairingSession() 
